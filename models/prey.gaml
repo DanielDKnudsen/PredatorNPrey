@@ -1,18 +1,18 @@
 model prey_predator
 
 global {
-    int nb_preys_init <- 200;
+    int nb_preys_init <- 1000;
     int nb_predators_init <- 50;
     float prey_max_energy <- 1.0;
-    float prey_max_transfert <- 0.1;
+    float prey_max_transfert <- 0.2;
     float prey_energy_consum <- 0.05;
-    float predator_max_energy <- 1.0;
-    float predator_energy_transfert <- 0.5;
+    float predator_max_energy <- 5.0;
+    float predator_energy_transfert <- 1.0;
     float predator_energy_consum <- 0.02;
-    float prey_proba_reproduce <- 0.01;
-    int prey_nb_max_offsprings <- 5;
-    float prey_energy_reproduce <- 0.5;
-    float predator_proba_reproduce <- 0.01;
+    float prey_proba_reproduce <- 0.5;
+    int prey_nb_max_offsprings <- 3;
+    float prey_energy_reproduce <- 0.2;
+    float predator_proba_reproduce <- 0.05;
     int predator_nb_max_offsprings <- 3;
     float predator_energy_reproduce <- 0.5;
     int nb_preys -> {length(prey)};
@@ -51,7 +51,7 @@ species generic_species {
     }
 
     reflex eat {
-        energy <- energy + energy_from_eat();        
+        energy <- energy + energy_from_eat() - 0.1;
     }
 
     reflex die when: energy <= 0 {
@@ -112,31 +112,34 @@ species prey parent: generic_species {
         if(my_cell.food > 0) {
             energy_transfert <- min([max_transfert, my_cell.food]);
             my_cell.food <- my_cell.food - energy_transfert;
-        }             
+        }
         return energy_transfert;
     }
     
     bool spot_predators{
-    	vegetation_cell my_cell_tmp <- shuffle(my_cell.neighbors3) first_with (!(empty(predator inside (each))));  	
-    	
+    	vegetation_cell my_cell_tmp <- shuffle(my_cell.neighbors3) first_with (!(empty(predator inside (each))));
     	return my_cell_tmp != nil;
     }
     
     reflex fight_or_flight when: (spot_predators()) {
-    	write "Prior location" + my_cell.location;
-    	float y <- my_cell.grid_y;
-    	float x <- my_cell.grid_x;
-    	my_cell.location <- {x, y + 3.0, 0.0};
-    	write "New locations" + my_cell.location;
+    	int y_before <- my_cell.grid_y;
+    	int x_before <- my_cell.grid_x;
+    	my_cell <- one_of (my_cell.neighbors3);
+    	int change_y <- abs(my_cell.grid_y-y_before);
+    	int change_x <- abs(my_cell.grid_x-x_before);
+    	int biggest_change <- max([change_y, change_x]);
+		energy <- energy - biggest_change * 0.2;
+    	location <- my_cell.location;
     }
 
     vegetation_cell choose_cell {    	
     	vegetation_cell juiciest_neighbor <- (my_cell.neighbors1) with_max_of (each.food);
-    	if(my_cell.food > juiciest_neighbor.food) {
-    		return my_cell;
-    	}
+    	if(my_cell.food < 0.1) {
+    		energy <- energy - 0.2;
+    		return juiciest_neighbor;
+    	}    	
     	
-    	return juiciest_neighbor;
+    	return my_cell;
     }
 }
 
@@ -164,11 +167,22 @@ species predator parent: generic_species {
     vegetation_cell choose_cell {
         vegetation_cell my_cell_tmp <- shuffle(my_cell.neighbors2) first_with (!(empty(prey inside (each))));
         if my_cell_tmp != nil {
+        	
+        	int y_before <- my_cell_tmp.grid_y;
+	    	int x_before <- my_cell_tmp.grid_x;
+	    	int change_y <- abs(my_cell.grid_y-y_before);
+	    	int change_x <- abs(my_cell.grid_x-x_before);
+	    	int biggest_change <- max([change_y, change_x]);
+			energy <- energy - biggest_change * 0.25;
+        	
             return my_cell_tmp;
         } else {
-            return one_of(my_cell.neighbors2);
+        	energy <- energy - 0.2;
+            return one_of(my_cell.neighbors1);
         }
     }
+    
+    // TODO: Implementer lugt 6 celler væk
 }
 
 grid vegetation_cell width: 50 height: 50 neighbors: 8 {
