@@ -1,15 +1,15 @@
 model prey_predator
 
 global {
-    int nb_preys_init <- 1000;
-    int nb_predators_init <- 50;
+    int nb_preys_init <- 400;
+    int nb_predators_init <- 60;
     float prey_max_energy <- 1.0;
     float prey_max_transfert <- 0.2;
     float prey_energy_consum <- 0.05;
     float predator_max_energy <- 5.0;
     float predator_energy_transfert <- 1.0;
     float predator_energy_consum <- 0.02;
-    float prey_proba_reproduce <- 0.5;
+    float prey_proba_reproduce <- 0.05;
     int prey_nb_max_offsprings <- 3;
     float prey_energy_reproduce <- 0.2;
     float predator_proba_reproduce <- 0.05;
@@ -17,6 +17,7 @@ global {
     float predator_energy_reproduce <- 0.5;
     int nb_preys -> {length(prey)};
     int nb_predators -> {length(predator)};
+    int grid_size <- 100;
 
     init {
         create prey number: nb_preys_init;
@@ -51,7 +52,7 @@ species generic_species {
     }
 
     reflex eat {
-        energy <- energy + energy_from_eat() - 0.1;
+        energy <- energy + energy_from_eat() - 0.01;
     }
 
     reflex die when: energy <= 0 {
@@ -177,15 +178,53 @@ species predator parent: generic_species {
         	
             return my_cell_tmp;
         } else {
-        	energy <- energy - 0.2;
-            return one_of(my_cell.neighbors1);
+        	vegetation_cell my_cell_tmp2 <- shuffle(my_cell.neighbors6) first_with (!(empty(prey inside (each))));
+        	if(my_cell_tmp2 != nil)
+        	{
+	        	prey preyInsideCell <- (prey inside my_cell_tmp2)[0];
+	        	float direction <- self towards preyInsideCell;
+	        	float scaling_factor <- 100/grid_size;
+	        	float scaled_x <- scaling_factor * my_cell.grid_x + scaling_factor * 0.5;
+	        	float scaled_y <- scaling_factor * my_cell.grid_y + scaling_factor * 0.5;
+	        	
+	        	if(direction <= 45 or direction > 315)
+	        	{
+	        	// RIGHT
+	        	my_cell.location <- {scaled_x + scaling_factor, scaled_y, 0.0};
+	        	
+	        	}
+	        	else if(direction > 45 and direction <= 135)
+	        	{
+	        	// DOWN
+	        	my_cell.location <- {scaled_x, scaled_y + scaling_factor, 0.0};
+	        		
+	        	}
+	        	else if(direction > 135 and direction <= 225)
+	        	{
+	        	// LEFT	
+	        	my_cell.location <- {scaled_x - scaling_factor, scaled_y, 0.0};
+	        	}
+	        	else {
+	        	// UP
+	        	my_cell.location <- {scaled_x, scaled_y - scaling_factor, 0.0};
+	        	
+	        	}
+	        	return my_cell;
+        	}
+        	else {
+	        	energy <- energy - 0.2;
+	            return one_of(my_cell.neighbors1);
+        	}   
+
+        	
+
         }
     }
     
     // TODO: Implementer lugt 6 celler væk
 }
 
-grid vegetation_cell width: 50 height: 50 neighbors: 8 {
+grid vegetation_cell width: grid_size height: grid_size neighbors: 8 {
     float max_food <- 1.0;
     float food_prod <- rnd(0.01);
     float food <- rnd(1.0) max: max_food update: food + food_prod;
@@ -193,6 +232,7 @@ grid vegetation_cell width: 50 height: 50 neighbors: 8 {
     list<vegetation_cell> neighbors1 <- (self neighbors_at 1);
     list<vegetation_cell> neighbors2 <- (self neighbors_at 2);
     list<vegetation_cell> neighbors3 <- (self neighbors_at 3);
+    list<vegetation_cell> neighbors6 <- (self neighbors_at 6);
 }
 
 experiment prey_predator type: gui {
