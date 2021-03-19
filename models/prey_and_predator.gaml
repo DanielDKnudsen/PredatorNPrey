@@ -1,11 +1,3 @@
-/**
-* Name: experiment
-* Based on the internal empty template. 
-* Author: Thomas
-* Tags: 
-*/
-
-
 model prey_and_predator
 
 import "prey.gaml"
@@ -58,5 +50,3 @@ experiment prey_predator type: gui {
         monitor "Number of predators" value: nb_predators;
     }
 }
-/* Insert your model definition here */
-

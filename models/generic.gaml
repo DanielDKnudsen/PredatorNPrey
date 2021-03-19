@@ -1,12 +1,4 @@
-/**
-* Name: generic
-* Based on the internal empty template. 
-* Author: Thomas
-* Tags: 
-*/
-
 model generic
-
 
 global {
     int nb_preys_init <- 400;

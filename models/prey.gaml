@@ -1,4 +1,3 @@
-
 model prey
 
 import "generic.gaml"
@@ -23,12 +22,8 @@ species prey parent: generic_species {
         return energy_transfert;
     }
     
-    bool spot_predators{
-    	vegetation_cell my_cell_tmp <- shuffle(my_cell.neighbors3) first_with (!(empty(predator inside (each))));
-    	return my_cell_tmp != nil;
-    }
-    
-    reflex fight_or_flight when: (spot_predators()) {
+    // Prey flees whenever they spot predators within 3 cells
+    reflex flee when: (spot_predators()) {
     	int y_before <- my_cell.grid_y;
     	int x_before <- my_cell.grid_x;
     	my_cell <- one_of (my_cell.neighbors3);
@@ -38,7 +33,13 @@ species prey parent: generic_species {
 		energy <- energy - biggest_change * 0.2;
     	location <- my_cell.location;
     }
-
+    
+    // Returns true if a predator is spotted. 
+    bool spot_predators{
+    	vegetation_cell my_cell_tmp <- shuffle(my_cell.neighbors3) first_with (!(empty(predator inside (each))));
+    	return my_cell_tmp != nil;
+    }
+    
     vegetation_cell choose_cell {    	
     	vegetation_cell juiciest_neighbor <- (my_cell.neighbors1) with_max_of (each.food);
     	if(my_cell.food < 0.1) {
